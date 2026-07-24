@@ -3,7 +3,7 @@
 산업용 머신비전 검사 시스템의 축소 구현.
 이미지에서 결함을 검출해 OK/NG를 판정하고, 이력을 누적해 통계로 환원한다.
 
-> **상태:** 🚧 M0 (설계) — 2026.07
+> **상태:** ✅ M0 완료 (솔루션 뼈대 + 빌드 + 리포지토리) → 🚧 M1 진행 대기 — 2026.07
 
 ---
 
@@ -77,8 +77,17 @@
 ---
 
 ## 빌드
+ 
+**요구 사항**
+- Visual Studio 2022 (Desktop development with C++, .NET desktop development 워크로드)
+- .NET 8.0 SDK
 
-> M2 완료 후 작성.
+**절차**
+1. `VisionInspector.sln` 을 Visual Studio 2022로 연다
+2. 상단 플랫폼 드롭다운이 **x64** 인지 확인한다 (`VisionCore`, `VisionApp` 둘 다)
+3. 빌드 → 솔루션 빌드 (`Ctrl+Shift+B`)
+> P/Invoke 연동(M2) 이전까지는 두 프로젝트가 서로 참조하지 않는다.
+> 각자 독립적으로 빌드·실행 가능하다.
 
 ---
 

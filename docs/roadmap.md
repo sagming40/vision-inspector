@@ -26,18 +26,18 @@ vision-inspector/
 
 ---
 
-## M0 — 뼈대 세우기  `약 1일`
+## M0 — 뼈대 세우기  `약 1일` ✅ 완료 (2026.07.24)
 
-- [ ] GitHub 리포 생성 (`vision-inspector`), `.gitignore` 는 VisualStudio 템플릿
-- [ ] 위 폴더 구조 그대로 생성
-- [ ] 빈 솔루션에 C++ DLL 프로젝트 + C# WPF 프로젝트 추가
-- [ ] **둘 다 x64 로 통일** ← 나중에 `BadImageFormatException` 안 만나려면 지금 해야 함
+- [x] GitHub 리포 생성 (`vision-inspector`), `.gitignore` 는 VisualStudio 템플릿
+- [x] 위 폴더 구조 그대로 생성
+- [x] 빈 솔루션에 C++ DLL 프로젝트 + C# WPF 프로젝트 추가
+- [x] **둘 다 x64 로 통일** ← 나중에 `BadImageFormatException` 안 만나려면 지금 해야 함
 
-**완료 조건:** 두 프로젝트 모두 빌드 성공, 첫 커밋 완료
+**완료 조건:** 두 프로젝트 모두 빌드 성공, 첫 커밋 완료 ✅ + 초과 달성: GitHub 원격 리포지토리 push 완료
 
 ---
 
-## M1 — Python 프로토타입 + 성능 측정  `2~3일`
+## M1 — Python 프로토타입 + 성능 측정  `2~3일` ⬅ 다음 단계
 
 **이 단계를 건너뛰면 프로젝트 전체의 명분이 사라진다.**
 
