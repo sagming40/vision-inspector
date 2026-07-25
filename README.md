@@ -68,11 +68,12 @@
 
 | 파일 | 내용 |
 |---|---|
-| `docs/architecture.md` | 레이어 구조와 경계 정의 |
-| `docs/pipeline.md` | 이미지 한 장이 거치는 전 과정 |
-| `docs/decisions.md` | 설계 결정과 그 이유 (ADR) |
-| `docs/benchmark.md` | 성능 측정 프로토콜과 결과 |
-| `docs/roadmap.md` | 마일스톤 |
+| [`docs/architecture.md`](docs/architecture.md) | 레이어 구조와 경계 정의 |
+| [`docs/pipeline.md`](docs/pipeline.md) | 이미지 한 장이 거치는 전 과정 |
+| [`docs/decisions.md`](docs/decisions.md) | 설계 결정과 그 이유 (ADR) |
+| [`docs/benchmark.md`](docs/benchmark.md) | 성능 측정 프로토콜과 결과 |
+| [`docs/devlog.md`](docs/devlog.md) | 개발 일지 — 시행착오와 배운 것 |
+| [`docs/roadmap.md`](docs/roadmap.md) | 마일스톤 |
 
 ---
 
