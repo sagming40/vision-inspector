@@ -64,4 +64,64 @@ def morphology_cv2(img: np.ndarray) -> np.ndarray:
     closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel)
     
     return closed
+
+
+def blob_area_pure_python(binary_img: np.ndarray) -> list:
+    """
+    이진화된 흑백 이미지(0/255)에서 서로 붙어있는 흰 덩어리(블롭)를 찾아
+    각 덩어리의 면적(픽셀 개수)을 리스트로 돌려준다.
+    cv2.findContours()를 안 쓰고 순수 반복문으로 직접 구현한 버전 (A안 — 최악 기준선)
+    
+    비유: 강당에 흩어진 사람들 중 "어깨 맞닿은 사람들끼리 같은 팀" 으로 묶어서 
+    팀별 인원수를 세는 것과 같음. 
+    """
+    height, width = binary_img.shape  # 이미지 세로/가로 픽셀 수
+    
+    # --- 1. "이 픽셀에 라벨(팀 번호)을 붙였나 붙이지 않았나"를 기록학 도화지 ---
+    # 처음엔 전부 0(라벨 없음)으로 채운다. 원본이랑 똑같은 크기로 만든다.
+    labels = np.zeros((height, width), dtype=np.int32)
+    
+    current_label = 0       # 지금까지 몇 번째 덩어리를 찾았는지
+    areas = []              # 각 덩어리(라벨)별 면적(픽셀 개수)을 담을 리스트
+    
+    # --- 2. 이미지의 모든 픽셀을 위에서 아래로, 왼쪽에서 오른쪽으로 훑는다. ---
+    for y in range(height):
+        for x in range(width):
+            
+            # 이 픽셀이 흰색(255)이고, 아직 아무 라벨도 붙지 않았으면
+            # -> "새로운 덩어리의 시작점"을 발견한 것
+            if binary_img[y, x] == 255 and labels[y, x] == 0:
+                
+                current_label += 1  # 새 팀 번호 발급
+                area = 0            # 이 팀(덩어리)에 몇 명(픽셀)이 있는지 셀 변수
+                
+                # --- 3. "확인해야 할 픽셀 목록" 바구니(스택) ---
+                # 재귀 대신 이 리스트로 직접 관리한다. (RecursionError 방지)
+                stack = [(y, x)]
+                
+                # --- 4. 바구니가 빌 때까지 계속 꺼내서 처리 ---
+                while stack:
+                    cy, cx = stack.pop()  # 바구니에서 좌표 하나 꺼냄
+                    
+                    # 이미 라벨이 붙은 픽셀이면 중복 처리니까 건너뜀
+                    # (같은 좌표가 여러 이웃한테서 동시에 stack에 들어올 수 있어서 필요한 방어)
+                    if labels[cy, cx] != 0:
+                        continue
+                    
+                    # 라벨 붙이고, 이 덩어리의 면적 카운트 +1
+                    labels[cy, cx] = current_label
+                    area += 1
+                    
+                    # --- 5. 상하좌우 4방향 이웃을 확인해서, 흰색이고 라벨이 없으면 바구니에 추가 ---
+                    neighbors = [(cy - 1, cx), (cy + 1, cx), (cy, cx - 1), (cy, cx + 1)]
+                    for ny, nx in neighbors:
+                        # 이미지를 벗어나지 않는지 먼저 확인 (그렇지 않으면 IndexError)
+                        if 0 <= ny < height and 0 <= nx < width:
+                            if binary_img[ny, nx] == 255 and labels[ny, nx] == 0:
+                                stack.append((ny, nx))
+                
+                # 이 덩어리(팀) 탐색이 끝났으면, 최종 면적을 리스트에 기록
+                areas.append(area)
+                
+    return areas                            
     
