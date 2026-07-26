@@ -27,5 +27,12 @@ extern "C"
 __declspec(dllexport)
 void __stdcall Invert(unsigned char* data, int length)
 {
-	// 다음 스텝에서 채울 예정 — 틀만
+	// length는 "이 창고에 상자가 몇 개 있는지" 알려주는 숫자.
+	// 이게 없으면 어디서 멈춰야 할지 몰라서 다른 메모리까지 침범하게 됨.
+	for (int i = 0; i < length; i++)
+	{
+		// data[i] = 시작 주소에서 i칸 떨어진 그 자리의 실제 값
+		// 255에서 빼는 것 = 흑백 반전 공식 (0 <-> 255, 100 <-> 155 ...)
+		data[i] = 255 - data[i];
+	}
 }
