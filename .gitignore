@@ -65,3 +65,4 @@ Thumbs.db
 ## 검증용 이미지 — 눈으로 확인용
 ## ==========================================
 test_*.png
+!src/VisionApp/Assets/test_m3_small.png
