@@ -7,6 +7,20 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <!-- 
+          x:Name="MyImage" — 이 액자에 "이름표"를 붙이는 것.
+          나중에 C# 코드(.xaml.cs)에서 "MyImage"라는 이름으로
+          이 액자를 직접 찾아서 사진을 바꿔 끼울 거라 이름이 꼭 필요해.
 
+          Source="/Assets/test_m3_small.png" — 지금은 일단 원본 그대로 보여주기용.
+          나중에 Invert 호출한 결과로 이 부분을 코드에서 갈아치울 거야.
+
+          Stretch="None" — 이미지 원래 크기(300x300) 그대로 보여줘라는 뜻.
+          이거 안 쓰면 WPF가 창 크기에 맞춰 이미지를 억지로 늘리거나 줄여서
+          지금처럼 "반전됐는지 눈으로 정확히 확인" 하려는 목적엔 안 맞아.
+        -->
+        <Image x:Name="MyImage"
+               Source="/Assets/test_m3_small.png"
+               Stretch="None"/>
     </Grid>
 </Window>

@@ -25,4 +25,8 @@
          SkipUnchangedFiles="true" — 파일이 그대로면 복사 생략 (매번 무의미하게 다시 쓰지 않게). -->	
   </Target>
 	
+  <ItemGroup>
+    <Resource Include="Assets\test_m3_small.png" />
+  </ItemGroup>
+	
 </Project>
