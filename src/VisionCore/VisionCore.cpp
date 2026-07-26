@@ -19,3 +19,13 @@ int __stdcall Add(int a, int b)
 {
 	return a + b;
 }
+
+// "Invert" — 명단(헤더)에 새 메뉴 하나 추가하는 것
+// 이 함수는 배열의 "주소"를 받아서, 그 주소가 가리키는 실제 데이터를
+// 직접 뒤집어놓고 끝난다 (리턴값 없음 = void)
+extern "C"
+__declspec(dllexport)
+void __stdcall Invert(unsigned char* data, int length)
+{
+	// 다음 스텝에서 채울 예정 — 틀만
+}
