@@ -9,15 +9,15 @@
 
 ```
 vision-inspector/
-├─ VisionInspector.sln          ← C++ / C# 프로젝트를 한 솔루션에
+├─ VisionInspector.sln         ← C++ / C# 프로젝트를 한 솔루션에
 ├─ src/
-│  ├─ VisionCore/               ← C++ DLL (엔진)
-│  ├─ VisionApp/                ← C# WPF (UI)
-│  └─ analysis/                 ← Python (분석)
-├─ samples/                     ← 테스트 이미지
+│  ├─ VisionCore/              ← C++ DLL (엔진)
+│  └─ VisionApp/               ← C# WPF (UI)
+├─ analysis/                   ← Python (분석) — M1 진행 중 루트에 생성됨, src/ 하위 아님
+├─ samples/                    ← 테스트 이미지
 ├─ docs/
-│  ├─ decisions.md              ← 왜 이렇게 했는지 기록 (면접 대비 핵심)
-│  └─ benchmark.md              ← 성능 측정 기록
+│  ├─ decisions.md             ← 왜 이렇게 했는지 기록 (면접 대비 핵심)
+│  └─ benchmark.md             ← 성능 측정 기록
 └─ README.md
 ```
 
