@@ -9,5 +9,20 @@
     <PlatformTarget>x64</PlatformTarget>
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
-
+	
+  <Target Name="CopyVisionCoreDll" AfterTargets="build">
+  <!-- AfterTargets="build" — "빌드라는 작업이 하나 끝날 때 마다 이 일도 같이해라" 라는 예약.
+	   택배(빌드 결과물) 도착 확인 후 자동으로 다른 부서로 보내는 규칙을 등록하는 셈. -->
+	<ItemGroup>
+      <VisionCoreDll Include="$(MSBuildProjectDirectory)\..\..\x64\$(Configuration)\VisionCore.dll" />
+	  <!-- $(MSBuildProjectDirectory) = 지금 이 csproj 파일이 있는 폴더 경로 (자동으로 채워짐).
+		   $(Configuration) = 지금 Debug로 빌드 중이면 "Debug", Release면 "Release"로 자동 치환.
+		   하드코딩 안 하는 이유: 나중에 Release 빌드할 때도 이 규칙이 알아서 맞는 경로를 찾게 하려고. -->  
+	</ItemGroup>
+	<Copy SourceFiles="@(VisionCoreDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+	<!-- $(OutDir) = VisionApp이 지금 실행 파일(exe)을 뱉어내는 바로 그 폴더.
+         폴더경로를 직접 찾아서 붙여넣기 했던 그 목적지 폴더를 MSBuild가 자동으로 알고 있음.
+         SkipUnchangedFiles="true" — 파일이 그대로면 복사 생략 (매번 무의미하게 다시 쓰지 않게). -->	
+  </Target>
+	
 </Project>
