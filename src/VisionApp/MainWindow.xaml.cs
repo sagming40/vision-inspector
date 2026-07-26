@@ -51,6 +51,31 @@ namespace VisionApp
             string result = string.Join(", ", testData);
             MessageBox.Show($"Invert 결과: {result}");
 
+            // 1. 화면에 뜬 것과 같은 파일을 다시 코드로 불러옴 (같은 팩 URI 사용)
+            BitmapImage bitmapImage = new BitmapImage(new Uri("pack://application:,,,/Assets/test_m3_small.png"));
+
+            // 2. "쓸 수 있는 캔버스" 형태로 변환.
+            //    PixelFormats.Gray8 — 픽셀 하나 = 1바이트(0~255) 흑백 포맷.
+            //    우리가 만든 샘플 이미지가 원래 흑백이라 이 포맷이 딱 맞음.
+            WriteableBitmap writeableBitmap = new WriteableBitmap(
+                new FormatConvertedBitmap(bitmapImage, PixelFormats.Gray8, null, 0));
+
+            int width = writeableBitmap.PixelWidth;
+            int height = writeableBitmap.PixelHeight;
+            // WriteableBitmap이 알려주는 실제 stride를 그대로 사용
+            // (Gray8이라 이론상 width와 같겠지만, 메모리 정렬 여유분이 붙을 수 있어 직접 물어보는 게 안전함)
+            int stride = writeableBitmap.BackBufferStride;
+
+            // 3. 픽셀 데이터를 담을 그릇(배열) 준비. 전체 크기 = stride * height
+            byte[] pixels = new byte[stride * height];
+
+            // CopyPixels: 이 캔버스의 물감 배치를 통째로 배열로 복사.
+            writeableBitmap.CopyPixels(pixels, stride, 0);
+
+            // 4. 확인용 — 앞부분 몇 바이트만 눈의로 찍어봄
+            MessageBox.Show($"width={width}, height={height}, stride={stride}\n" +
+                            $"pixels[0]={pixels[0]}, pixels[1]={pixels[1]}, pixels[2]={pixels[2]}");
+
             // 화면에 결과 띄우기 — 7이 나오면 국경 넘기 성공
             int addresult = Add(3, 4);
             // 생성자 안이라 창이 뜨는 시점에 바로 한 번 실행됨
