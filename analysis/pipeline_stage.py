@@ -124,4 +124,70 @@ def blob_area_pure_python(binary_img: np.ndarray) -> list:
                 areas.append(area)
                 
     return areas                            
+
+
+def blob_area_numpy(binary_img: np.ndarray) -> list:
+    """
+    이진화된 흑백 이미지(0/255)에서 서로 붙어있는 흰 덩어리(블롭)를 찾아
+    각 덩어리의 면적(픽셀 개수)을 리스트로 돌려준다.
+    numpy 벡터화 버전 (B안 — 공정한 비교 대상).
     
+    비유: 일단 모든 사람에게 각각 다른 이름표를 달아준 다음,
+    "옆 사람 번호가 나보다 작으면 그 번호로 바꿔 단다"를
+    전체 인원이 동시에 반복해서, 결국 같은 무리를 같은 번호로 수렴시킨다. 
+    """
+    height, width = binary_img.shape
+    
+    # --- 1. 모든 픽셀에 고유 번호를 매긴다 (0, 1, 2, 3, ... 순서대로) ---
+    # np.arange로 0부터 (전체 픽셀 수 - 1)까지 번호를 만들고, 이미지 모양으로 접는다.
+    labels = np.arange(height * width, dtype=np.int64).reshape(height, width)
+    
+    # --- 2. 배경(검은 픽셀)은 무한대로 취급 ---
+    # "무한대"로 해두면, 나중에 이웃끼리 min 비교 시 배경이 이길 일이 절대 없음.
+    # (배경이 흰 덩어리의 번호를 침범하면 안 됨)
+    labels = np.where(binary_img == 255, labels, np.iinfo(np.int64).max)
+    
+    # --- 3. 이웃끼리 번호를 비교해서 전파시키는 과정을 반복한다 ---
+    # 한 번 훑을 때 상하좌우 4방향에서 "나보다 작은 이웃 번호"를 받아온다.
+    # 이걸 여러 번 반복해야 덩어리 전체에 제일 작은 번호가 끝까지 퍼진다.
+    for _ in range(max(height, width)):  # 최악의 경우를 대비한 반복 횟수
+        
+        # 위쪽 이웃과 비교: 배열을 한 칸 아래로 밀어서 "내 위쪽 픽셀 값"을 가져온다
+        shifted = np.full_like(labels, np.iinfo(np.int64).max)
+        shifted[1:, :] = labels[:-1, :]
+        new_labels = np.minimum(labels, shifted)
+        
+        # 아래쪽 이웃과 비교
+        shifted = np.full_like(labels, np.iinfo(np.int64).max)
+        shifted[:-1, :] = labels[1:, :]
+        new_labels = np.minimum(new_labels, shifted)
+        
+        # 왼쪽 이웃과 비교
+        shifted = np.full_like(labels, np.iinfo(np.int64).max)
+        shifted[:, 1:] = labels[:, :-1]
+        new_labels = np.minimum(new_labels, shifted)
+        
+        #오른쪽 이웃과 비교
+        shifted = np.full_like(labels, np.iinfo(np.int64).max)
+        shifted[:, :-1] = labels[:, 1:]
+        new_labels = np.minimum(new_labels, shifted)
+        
+        # 배경(원래 무한대였던 자리)은 다시 무한대로 되돌린다 (전파되면 안됨)
+        new_labels = np.where(binary_img == 255, new_labels, np.iinfo(np.int64).max)
+
+        if np.array_equal(new_labels, labels):
+            break  # 더 이상 바뀌는게 없으면 완료 — 조기 종료
+        labels = new_labels
+    
+    # --- 4. 라벨별로 몇 개의 픽셀이 있는지 센다 ---
+    # 배경(무한대)은 결함이 아니니까 제외하고 셈.
+    final_labels = labels[labels != np.iinfo(np.int64).max]
+    
+    # np.unique(..., return_counts=True): 서로 다른 값이 뭐가 있는지,
+    # 그리고 각 값이 몇 번 나왔는지를 동시에 알려주는 numpy 함수.
+    # 비유: 학생 명부에서 "몇개 반이 있고, 각 반에 몇 명씩 있나"를 한 번에 세는 것.
+    unique_labels, counts = np.unique(final_labels, return_counts=True)
+
+    # counts는 numpy 배열이라, A안(순수 반복문 버전)이 반환하는 형식과
+    # 맞추기 위해 파이썬 기본 list로 변환하여 반환한다.    
+    return counts.tolist()
