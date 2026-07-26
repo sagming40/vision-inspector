@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "VisionApp": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
