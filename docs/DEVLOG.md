@@ -161,7 +161,7 @@ DLL은 그 자체로 실행 가능한 대상이 아니라는 것, 시작 프로�
 `[DllImport]`, `public static extern` 같은 C# 문법을 그대로 `.cpp` 파일에 붙여넣어서 `E1277`, `C2059` 등 에러가 대거 발생. C++ 컴파일러가 대괄호 특성 문법과 `public` 키워드를 이해하지 못해 벌어진 일. 코드를 올바른 C# 파일(`MainWindow.xaml.cs`)로 옮겨서 해결. M2 때 겪었던 "class 바깥에 실행문 작성" 문제의 사촌 격 실수.
 
 **2. P/Invoke 선언·호출 코드를 class 몸통 안, 생성자 밖에 작성**
-`testData` 선언과 `Invert` 호출, `MessageBox.Show`까지를 생성자(`MainWindow()`) 바깥, class 몸통 바로 밑에 작성해서 컴파일러가 이를 실행문이 아니라 생성자 오버로드 선언 시도로 오인 (`CS0501` 등). "필드/메서드 선언 자리"와 "실행문이 와야 하는 자리"가 C#에서 엄격히 구분된다는 걸 다시 한번 체감. 생성자 안으로 이동해 해결.
+`testData` 선언과 `Invert` 호출, `MessageBox.Show`까지를 생성자(`MainWindow()`) 바깥, class 몸통 바로 밑에 작성해서 컴파일러가 이를 실행문이 아니라 생성자 오버로드 선언 시도로 오인 (`CS0501` 등). "필드/메서드 선언 자리"와 "실행문이 와야하는 자리"가 C#에서 엄격히 구분된다는 걸 다시 한번 체감. 생성자 안으로 이동해 해결.
 
 **3. 지역 변수 이름 중복 (`CS0128`)**
 `Invert` 결과를 담을 `result`(string)와 `Add` 결과를 담을 `result`(int)를 같은 생성자 범위 안에 동시에 선언해서 충돌. 타입이 달라도 이름이 같으면 안 된다는 것, 그리고 "이미 정의되어 있습니다" 류 메시지는 구조 오류가 아니라 이름 충돌이라는 패턴으로 구분해서 읽어야 한다는 걸 배움.
@@ -182,5 +182,44 @@ DLL은 그 자체로 실행 가능한 대상이 아니라는 것, 시작 프로�
 - WPF에 임계값 조절 슬라이더(MVVM, `INotifyPropertyChanged`) 추가
 - fps 재측정 → M1 수치와 비교해 `benchmark.md` 갱신 ("Python N fps → C++ M fps" 비교표가
   이 프로젝트에서 가장 중요한 산출물임을 로드맵이 강조하고 있음, 서두르지 말 것)
+
+---
+
+## 2026-07-27 ~ 2026-07-28 · M4 (OpenCV 투입 + 성능 재측정 — 시작)
+
+### 오늘 한 일
+- vcpkg 클론(`C:\vcpkg`) → 부트스트랩(`bootstrap-vcpkg.bat`) → `integrate install`로 VS 전역 연동
+- `vcpkg install opencv:x64-windows`로 OpenCV 4.12.0 설치 (약 11분 소요, dnn 모듈 포함)
+- `VisionCore.cpp`에 `#include <opencv2/opencv.hpp>` 추가, 빌드 검증
+- `GetMatInfo(unsigned char* data, int width, int height, int* outRows, int* outCols)` 구현
+  — byte 배열을 `cv::Mat`으로 감싸고 rows/cols를 되돌려주는 최소 단위 검증 함수
+- C# `[DllImport]`로 `GetMatInfo` 선언 및 호출, `rows=300, cols=300`으로 원본 width/height와 일치 확인
+- `VisionApp.csproj`에 `CopyOpenCVRuntimeDlls` 타겟 추가 — OpenCV 런타임 dll(z.dll, opencv_core4.dll)을
+  VisionApp 출력 폴더로 자동 복사되게 함
+
+### 겪었던 이슈들
+
+**1. `#include <opencv2/opencv.hpp>`를 못 찾음 (`C1083: No such file or directory`)**
+`vcpkg integrate install`을 실행하고 VS를 재시작해도 해결 안 됨. 직접 파일 시스템을 뒤져보니 vcpkg가 설치한 OpenCV 4.x 헤더는 `include\opencv2\...`가 아니라 **`include\opencv4\opencv2\...`** 구조였음 (다른 버전 OpenCV와의 충돌을 막기 위한 vcpkg의 관례로 추정). `integrate install`이 자동으로 등록해주는 경로는 `include`까지만이라, `opencv4` 한 겹을 프로젝트 속성 → C/C++ → 일반 → 추가 포함 디렉터리에 수동으로 더 추가해야 했음.
+
+**2. 빌드는 되는데 실행하면 `DllNotFoundException: Unable to load DLL 'VisionCore.dll' or one of its dependencies`**
+`dumpbin /exports`로 VisionCore.dll 자체는 이름이 잘 노출된 것을 이미 확인한 상태라 원인이 다른 곳에 있다고 판단. 디버그 출력 로그를 자세히 읽어보니 VisionCore.dll은 로드됐다가 곧바로 다시 언로드되는 패턴이 보였음 — "DLL 자체를 못 찾음"이 아니라 "DLL은 찾았는데 그 DLL이 필요로 하는 다른 DLL을 못 찾음"에 해당하는 흐름. `dumpbin /dependents opencv_core4.dll`로 의존성 목록을 직접 뽑아보니 `z.dll`이 빠져있었음.
+
+원인: vcpkg의 applocal deployment(런타임 dll 자동 복사 기능)는 **VisionCore 프로젝트 자신의 출력 폴더(x64\Release)까지만** 책임지고, VisionCore.dll이 VisionApp 프로젝트로 한 번 더 실려 이동하는 것까지는 감안하지 않음. `VisionCore.dll` 자체는 M2 때 만든 csproj 자동 복사 규칙 덕에 VisionApp까지 넘어왔지만, `z.dll`/`opencv_core4.dll`은 그 규칙 대상이 아니었던 것.
+
+임시로 손수 복사해 문제 재현/해결을 확인한 뒤, `VisionApp.csproj`에 OpenCV 런타임 dll 전용 자동 복사 타겟(`CopyOpenCVRuntimeDlls`)을 추가. `z.dll`을 일부러 지우고 재빌드 → 자동으로 다시 채워지는 것까지 확인해 자동화가 실제로 동작함을 검증함.
+
+**3. `.csproj` 자동 복사 코드에서 `MSB3094` 발생**
+`CopyOpenCVRuntimeDlls` 타겟 작성 중 `DestinationFiles="$(OutDir)"`로 잘못 씀. 소스 파일이 2개(z.dll, opencv_core4.dll)인데 목적지가 1개라 "참조하는 항목 수는 같아야 한다"는 에러 발생. `DestinationFolder`(폴더에 넣기, 개수 제약 없음)와 `DestinationFiles`(소스 개수와 1:1 대응하는 결과 파일명 지정, 개수 반드시 일치)가 이름은 비슷해도 완전히 다른 속성이라는 걸 이 에러로 확인. 기존 `CopyVisionCoreDll` 타겟이 쓰던 `DestinationFolder`로 통일해 해결.
+
+### 오늘 배운 것 / 느낀 점
+- `DllNotFoundException`은 "DLL 자체가 없다"와 "DLL은 있는데 그 의존 파일이 없다"를 구분해서 알려주지 않는다는 걸 실측으로 확인함. 메시지 하나만 보고 판단하지 말고 `dumpbin /dependents`로 직접 의존성 트리를 확인하는 습관이 필요하다는 걸 체감.
+- 패키지 매니저(vcpkg)의 자동화는 "그 패키지 매니저가 직접 건드리는 프로젝트"까지만 책임진다는 것. 우리 구조(VisionCore → VisionApp으로 dll이 한 번 더 실려가는 구조)처럼 프로젝트 경계를 넘어가는 지점은 자동화 범위 밖일 수 있어서, 그 경계마다 별도로 확인해야 함.
+- MSBuild `Copy` 태스크의 `DestinationFolder`와 `DestinationFiles`는 이름이 비슷해 보이지만 전혀 다른 속성 — 전자는 "폴더에 넣어라"(개수 제약 없음), 후자는 "소스 개수와 1:1로 대응하는결과 파일명을 지정해라"(개수 안 맞으면 `MSB3094` 에러)라는 것을 에러로 직접 확인.
+
+### 다음에 할 일
+- M4 로드맵 다음 항목: 그레이스케일 → 블러 → 엣지 → 임계값 파이프라인을 C++ + OpenCV로 구현
+- 완료되면 WPF에 임계값 조절 슬라이더(MVVM) 추가
+- 파이프라인 완성 후 fps 재측정 → `benchmark.md`의 M4 비교표(A/B/C 3열) 채우기
 
 ---
