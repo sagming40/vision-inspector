@@ -37,3 +37,22 @@ void __stdcall Invert(unsigned char* data, int length)
 		data[i] = 255 - data[i];
 	}
 }
+
+// GetMatInfo — 두루마리(byte 배열)를 표(cv::mat)로 잘라서 정리해보고,
+// 표 형태로 잘 정리 됐는지 행/열 값을 돌려받아 확인하는 함수
+extern "C" __declspec(dllexport) void __stdcall GetMatInfo(
+	unsigned char* data,	// C#이 넘겨준 픽셀 데이터의 시작 주소 (두루마리)
+	int width,			    // 원본 이미지의 가로 픽셀 수 (C#만 알고 있는 정보라 직접 알려줘야 함)
+	int height,				// 원본 이미지의 세로 픽셀 수
+	int* outRows,			// 결과를 담을 그릇 1 — C#이 미리 준비해둔 주소 (ADR-006: C#이 버퍼 소유)
+	int* outCols)			// 결과를 담을 그릇 2
+{
+	// cv::Mat(세로 크기, 가로 크기, 픽셀 타입, 원본 데이터 주소)
+	// CV_8UC1 = "8bit(0~255) 부호없는 정수, 채널 1개(흑백)" 라는 뜻의 OpenCV 표기법
+	// 주의: 여기서 새로 데이터를 복사하는 게 아니라, 기존 data 주소를 그대로 "표 형식"으로 감싸기만 함
+	cv::Mat mat(height, width, CV_8UC1, data);
+
+	// 표로 잘 정리됐다면 rows/cols에 우리가 넣어준 height/width가 그대로 보여야 정상
+	*outRows = mat.rows;
+	*outCols = mat.cols;
+}

@@ -24,6 +24,19 @@
          폴더경로를 직접 찾아서 붙여넣기 했던 그 목적지 폴더를 MSBuild가 자동으로 알고 있음.
          SkipUnchangedFiles="true" — 파일이 그대로면 복사 생략 (매번 무의미하게 다시 쓰지 않게). -->	
   </Target>
+
+  <Target Name="CopyOpenCVRuntimeDlls" AfterTargets="build">
+  <!-- OpenCV(z.dll, opencv_core4.dll)는 우리 솔루션이 아니라
+       이 컴퓨터의 vcpkg 창고(C:\vcpkg)에 있어서, VisionCore.dll과 달리
+       "절대 경로"로 위치를 지정해야 함. -->
+	<ItemGroup>
+	  <OpenCVDll Include="C:\vcpkg\installed\x64-windows\bin\z.dll" />	  
+	  <OpenCVDll Include="C:\vcpkg\installed\x64-windows\bin\opencv_core4.dll" />
+	  <!-- 나중에 그레이스케일/블러/엣지 등 다른 OpenCV 모듈(imgproc 등)을 쓰기 시작하면
+           opencv_imgproc4.dll 같은 항목이 여기 하나씩 늘어날 수 있음 -->
+	</ItemGroup>
+	<Copy SourceFiles="@(OpenCVDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>	
 	
   <ItemGroup>
     <Resource Include="Assets\test_m3_small.png" />

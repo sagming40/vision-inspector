@@ -26,6 +26,16 @@ namespace VisionApp
         [DllImport("VisionCore.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern void Invert(byte[] data, int length);
 
+        // GetMatInfo — C++ 쪽에서 byte 배열을 cv::Mat(표)로 감싸본 뒤,
+        // 행(rows)/열(cols) 값을 다시 돌려주는 함수
+        [DllImport("VisionCore.dll")]
+        public static extern void GetMatInfo(
+            byte[] data,        // 픽셀 데이터 배열 (M3때 만든 것과 같은 방식)
+            int width,          // 원본 이미지 가로 크기 — 직접 알고 있어야 함
+            int height,         // 원본 이미지 세로 크기
+            out int rows,       // C++이 값을 채워 넣을 자리 — "출력 전용 상자"라는 뜻
+            out int cols);      // 마찬가지
+
         // "VisionCore.dll" 이라는 사무실의 Add라는 창구로 전화 걸 거다, 라는 선언.
         // CallingConvention.StdCall — C++ 쪽 __stdcall이랑 반드시 짝을 맞춰야 함.
         // 여기 하나만 어긋나도 컴파일은 되는데 실행하면 값이 이상하게 나오거나 죽음.
@@ -79,6 +89,14 @@ namespace VisionApp
             // 1. 방금 읽어온 진짜 픽셀 배열을 그대로 Invert에 넘김.
             //    testData(3칸)로 검증했던 것과 완전히 같은 원리 — 이번엔 배열이 진짜 이미지일 뿐.
             Invert(pixels, pixels.Length);
+
+            // GetMatInfo 호출 — pixels 배열이 cv::Mat으로 잘 감싸지는지,
+            // 우리가 이미 알고 있는 width/height(300, 300)와 rows/cols가 일치 하는지 확인
+            GetMatInfo(pixels, width, height, out int rows, out int cols);
+
+            // 여기서 미리 알고 있던 값(width=300, height=300)과
+            // C++이 돌려준 값(cols, rows)이 똑같이 나와야 "표로 잘 정리됐다"는 쯧
+            MessageBox.Show($"cv::Mat 확인 — rows={rows}, cols={cols} (원본 width={width}, height={height})");
 
             // 2. 반전된 pixels를 담을 "새 캔버스" 준비.
             //    width, height, dpi(96, 96 — 화면 기본 해상도), 픽셀 포맷은 원본과 동일하게 맟춰야 함.
