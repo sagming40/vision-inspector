@@ -76,6 +76,23 @@ namespace VisionApp
             MessageBox.Show($"width={width}, height={height}, stride={stride}\n" +
                             $"pixels[0]={pixels[0]}, pixels[1]={pixels[1]}, pixels[2]={pixels[2]}");
 
+            // 1. 방금 읽어온 진짜 픽셀 배열을 그대로 Invert에 넘김.
+            //    testData(3칸)로 검증했던 것과 완전히 같은 원리 — 이번엔 배열이 진짜 이미지일 뿐.
+            Invert(pixels, pixels.Length);
+
+            // 2. 반전된 pixels를 담을 "새 캔버스" 준비.
+            //    width, height, dpi(96, 96 — 화면 기본 해상도), 픽셀 포맷은 원본과 동일하게 맟춰야 함.
+            WriteableBitmap resultBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Gray8, null);
+
+            // Int32Rect(0, 0, width, height) — "왼쪽 위 (0,0)부터 전체 영역"이라는 뜻
+            Int32Rect fullarea = new Int32Rect(0, 0, width, height);
+
+            // WritePixels: 반전된 pixels 배열의 내용을 이 새 캔버스에 실제로 그려 넣음
+            resultBitmap.WritePixels(fullarea, pixels, stride, 0);
+
+            // 3. 화면의 Image 컨트롤이 보여주는 그림을 이 새 캔버스로 교체
+            MyImage.Source = resultBitmap;
+
             // 화면에 결과 띄우기 — 7이 나오면 국경 넘기 성공
             int addresult = Add(3, 4);
             // 생성자 안이라 창이 뜨는 시점에 바로 한 번 실행됨
