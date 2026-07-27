@@ -2,6 +2,7 @@
 // C++ DLL이 "밖으로 내놓는" 함수들을 모아두는 파일
 // 여기 없는 함수는 C#이 아무리 불러도 찾지 못함 — 이 파일이 청고 정문 명함판이다.
 #include "pch.h"
+#include <opencv2/opencv.hpp>  // OpenCV 부품 상자 열어보기 — 내용물은 아직 쓰지 않음 
 
 extern "C"
 // C++은 함수명을 맘대로 꼬아버림 (name mangling)
