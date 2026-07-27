@@ -142,3 +142,45 @@ DLL은 그 자체로 실행 가능한 대상이 아니라는 것, 시작 프로�
 - 값 전달 vs 참조(주소) 전달 차이, GC pinning이 왜 필요한지 `decisions.md`에 정리
 
 ---
+
+## 2026-07-26 ~ 2026-07-27 · M3 (배열 넘기기 — 진짜 픽셀 처리)
+
+### 오늘 한 일
+- `VisionCore.cpp`에 `Invert(unsigned char*, int)` export, `dumpbin`으로 이름 노출 확인
+- 반전 로직(`255 - data[i]`) 구현
+- C# `[DllImport]`로 `Invert` 선언, `byte[] {0,100,255}` 테스트 배열로 호출 → `{255,155,0}` 확인 — 원본 배열이 실제로 바뀌는 것으로 값 전달과 참조 전달의 차이를 실측
+- `docs/decisions.md`에 ADR-007(값 전달 vs 참조 전달) 신설, ADR-006에 pinning 실측 검증 섹션 추가
+- 300x300 흑백 테스트 이미지(`generate_m3_sample.py`) 생성, `VisionApp/Assets`에 Resource로 편입
+- `MainWindow.xaml`에 `<Image>` 컨트롤 추가, 원본 이미지 화면 표시 확인
+- `BitmapImage` → `WriteableBitmap`(Gray8) → `CopyPixels`로 `byte[]` 변환, 픽셀값(128) 검증
+- 변환된 `byte[]`를 `Invert`에 통과시킨 뒤 `WritePixels`로 새 `WriteableBitmap` 조립, `MyImage.Source` 교체 → 화면에서 반전 확인 (M3 완료 조건 충족)
+
+### 겪었던 이슈들
+
+**1. P/Invoke 선언을 C++ 파일(`VisionCore.cpp`)에 잘못 작성**
+`[DllImport]`, `public static extern` 같은 C# 문법을 그대로 `.cpp` 파일에 붙여넣어서 `E1277`, `C2059` 등 에러가 대거 발생. C++ 컴파일러가 대괄호 특성 문법과 `public` 키워드를 이해하지 못해 벌어진 일. 코드를 올바른 C# 파일(`MainWindow.xaml.cs`)로 옮겨서 해결. M2 때 겪었던 "class 바깥에 실행문 작성" 문제의 사촌 격 실수.
+
+**2. P/Invoke 선언·호출 코드를 class 몸통 안, 생성자 밖에 작성**
+`testData` 선언과 `Invert` 호출, `MessageBox.Show`까지를 생성자(`MainWindow()`) 바깥, class 몸통 바로 밑에 작성해서 컴파일러가 이를 실행문이 아니라 생성자 오버로드 선언 시도로 오인 (`CS0501` 등). "필드/메서드 선언 자리"와 "실행문이 와야 하는 자리"가 C#에서 엄격히 구분된다는 걸 다시 한번 체감. 생성자 안으로 이동해 해결.
+
+**3. 지역 변수 이름 중복 (`CS0128`)**
+`Invert` 결과를 담을 `result`(string)와 `Add` 결과를 담을 `result`(int)를 같은 생성자 범위 안에 동시에 선언해서 충돌. 타입이 달라도 이름이 같으면 안 된다는 것, 그리고 "이미 정의되어 있습니다" 류 메시지는 구조 오류가 아니라 이름 충돌이라는 패턴으로 구분해서 읽어야 한다는 걸 배움.
+
+**4. `dumpbin` 실행 경로 추측 실패**
+아까 M2 때 기억으로 `src\VisionCore\x64\Debug`를 짐작해서 시도했으나 `LNK1181` (파일 없음). 실제로는 솔루션 산출물 경로가 솔루션 루트 바로 밑 `x64\Debug`에 생기는 구조였음. `dir /s /b`로 실제 파일 위치를 직접 찾아서 해결 — 추측 대신 검색으로 확인하는 습관의 중요성을 다시 확인.
+
+**5. 테스트 이미지가 `.gitignore`의 `test_*.png` 규칙에 걸림**
+`VisionApp/Assets/test_m3_small.png`가 M1 때 정한 "검증용 이미지 전체 무시" 규칙에 걸려 추적이 안 되는 문제. 처음엔 파일명 앞에 언더바(`_`)를 붙여 우회하려 했으나, 이는 "왜 언더바가 붙었는지"가 코드/파일명만으로 드러나지 않아 지양 — 대신 `.gitignore`에 `!src/VisionApp/Assets/test_m3_small.png` 예외 규칙을 추가해 의도가 문서에 명시적으로 남도록 처리.
+
+### 오늘 배운 것 / 느낀 점
+- ADR-006(pinning)과 ADR-007(값/참조 전달)이 이론으로만 있던 게, `{0,100,255}` → `{255,155,0}` 실측 한 번으로 "사실"로 격상되는 과정을 직접 봄. 문서에 검증 섹션을 따로 두는 이유를 체감.
+- `stride`가 이론값(`width`)과 항상 같지 않다는 것 — 이번엔 우연히 같았지만 (`Gray8` + 정렬 여유 없음), 실제 값은 반드시 `BackBufferStride`로 직접 물어봐야 한다는 걸 배움. "당연히 같겠지"라고 넘겼으면 나중에 다른 포맷에서 바로 버그로 이어졌을 지점.
+- 같은 구조 오류(선언과 실행문 위치 착각)가 M2, M3에서 형태만 바뀌어 반복됨 — 다음부턴 에러가 무더기로 뜨면 개별 메시지보다 "이 코드가 지금 `{ }` 몇 겹 안에 있는지"부터 먼저 확인하는 습관을 들이기로 함.
+
+### 다음에 할 일
+- M4: C++ DLL에 OpenCV 연결 (그레이스케일 → 블러 → 엣지 → 임계값)
+- WPF에 임계값 조절 슬라이더(MVVM, `INotifyPropertyChanged`) 추가
+- fps 재측정 → M1 수치와 비교해 `benchmark.md` 갱신 ("Python N fps → C++ M fps" 비교표가
+  이 프로젝트에서 가장 중요한 산출물임을 로드맵이 강조하고 있음, 서두르지 말 것)
+
+---

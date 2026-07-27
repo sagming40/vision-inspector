@@ -72,14 +72,17 @@ vision-inspector/
 
 ---
 
-## M3 — 배열 넘기기 (진짜 픽셀 처리)  `3~5일`
+## M3 — 배열 넘기기 (진짜 픽셀 처리)  `3~5일` ✅ 완료 (2026.07.27)
 
-- [ ] C++ `Invert(unsigned char* data, int length)` 구현
-- [ ] C# `byte[]` 로 넘겨서 이미지가 실제로 반전되는지 확인
-- [ ] **값 전달 vs 참조(주소) 전달** 차이를 `docs/decisions.md` 에 정리
-- [ ] GC pinning 이 왜 필요한지 정리
+- [x] C++ `Invert(unsigned char* data, int length)` 구현
+- [x] C# `byte[]` 로 넘겨서 이미지가 실제로 반전되는지 확인
+- [x] **값 전달 vs 참조(주소) 전달** 차이를 `docs/decisions.md` 에 정리
+- [x] GC pinning 이 왜 필요한지 정리
 
-**완료 조건:** WPF 화면의 이미지가 C++ 코드로 인해 바뀐다
+**완료 조건:** WPF 화면의 이미지가 C++ 코드로 인해 바뀐다 ✅
+**진행 순서:** 3칸짜리 테스트 배열(`{0,100,255}`)로 원리 검증 → 300x300 테스트 이미지 생성
+→ `BitmapImage`→`WriteableBitmap`→`byte[]` 변환 검증 → `Invert` 호출 → `WritePixels`로 화면 재조립. 작은 단위로 먼저 증명하고 실제 이미지로 확장하는 순서로 진행.
+**메모:** P/Invoke 선언·실행문을 엉뚱한 위치(class 바로 밑, cpp 파일)에 작성하는 구조 오류가 이번에도 재발 — M2 때와 같은 패턴임을 인지. `stride`는 이론값(width)과 실측값(`BackBufferStride`)이 다를 수 있어 반드시 직접 조회해야 함을 실측으로 확인.
 
 ---
 
